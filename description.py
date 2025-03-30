@@ -68,7 +68,7 @@ if __name__ == "__main__":
     # Fields to check.
     fields_of_interest = ["PID-3", "PID-4", "PID-5", "PID-11", "PID-12", 
                           "PID-7", "PID-13", "PID-14", "PID-6", "PID-9",
-                          "PID-18", "PID-19", "PID-20", "PID-23", "PID-29", "PID-30"]
+                          "PID-18", "PID-19", "PID-20", "PID-21", "PID-23", "PID-29", "PID-30"]
     
     output_lines = []
     count_filtered = 0

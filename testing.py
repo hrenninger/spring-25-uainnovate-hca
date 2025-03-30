@@ -1,83 +1,79 @@
 import os
-import subprocess
 import json
+import random
 
-def test_consistent_identity():
-    # Create a temporary HL7 file with five identical messages for the same patient.
-    # Each message includes the same facility (FAC001) and MRN (123456) so the unique key is the same.
-    hl7_message = (
-        "MSH|^~\\&|SendingApp|FAC001|ReceivingApp|FAC001|20230101120000||ADT^A01|MSGID1|P|2.3\n"
-        "PID|1|123456|123456||Smith^Joe||19800101|M|||123 Fake St^^Faketown^CA^90210||555-555-1234|||\n"
-    )
-    # Create five copies of the same message
-    hl7_content = hl7_message * 5
+def parse_output_file(filename):
+    """
+    Parse the output file "messages_with_deid.txt" produced by your de-identification script.
+    Returns a dictionary mapping unique_key -> list of de-identified data dictionaries.
+    """
+    with open(filename, "r") as f:
+        content = f.read()
     
-    temp_filename = "temp_test.hl7"
-    with open(temp_filename, "w") as f:
-        f.write(hl7_content)
+    # Each message block is separated by a line of 80 dashes.
+    blocks = content.split("-" * 80)
+    results = {}
     
-    # Run the de-identification processing script.
-    # Adjust "deid_processor.py" if your main script has a different name.
-    subprocess.run(["python", "encrypt.py", temp_filename])
-    
-    # Read the output file (assuming your script writes to "messages_with_deid.txt")
-    output_filename = "messages_with_deid.txt"
-    try:
-        with open(output_filename, "r") as f:
-            output = f.read()
-    except Exception as e:
-        print("Error reading output file:", e)
-        return
-    
-    # Parse the output to extract de-identified JSON blocks.
-    # Our output file is formatted with sections separated by a line of dashes.
-    segments = output.split("-" * 80)
-    identities = []
-    for segment in segments:
-        if "De-Identified Data:" in segment:
-            lines = segment.strip().splitlines()
-            # Find the JSON portion after the "De-Identified Data:" header.
-            json_lines = []
-            found = False
-            for line in lines:
-                if found:
-                    json_lines.append(line)
-                if "De-Identified Data:" in line:
-                    found = True
+    for block in blocks:
+        block = block.strip()
+        if not block:
+            continue
+        lines = block.splitlines()
+        unique_key = None
+        deid_json = None
+        capture = False
+        json_lines = []
+        for line in lines:
+            if line.startswith("Unique Key:"):
+                unique_key = line.split("Unique Key:")[1].strip()
+            if "De-Identified Data:" in line:
+                capture = True
+                continue  # Skip header line
+            if capture:
+                json_lines.append(line)
+        if unique_key and json_lines:
             json_str = "\n".join(json_lines).strip()
-            if json_str:
-                try:
-                    data = json.loads(json_str)
-                    identities.append(data)
-                except Exception as e:
-                    print("JSON parsing error:", e)
+            try:
+                deid_data = json.loads(json_str)
+                results.setdefault(unique_key, []).append(deid_data)
+            except Exception as e:
+                print(f"Error parsing JSON for key {unique_key}: {e}")
+    return results
+
+def test_consistency(random_sample_count=5, output_file="messages_with_deid.txt"):
+    # Parse the output file
+    grouped = parse_output_file(output_file)
     
-    if not identities:
-        print("Test failed: No de-identified data found.")
+    # Filter keys that appear more than once for meaningful consistency testing.
+    multi_occurrence_keys = {k: v for k, v in grouped.items() if len(v) > 1}
+    
+    if not multi_occurrence_keys:
+        print("No keys appear more than once in the output file. Cannot test consistency across messages.")
         return
     
-    # Check that all identities have the same fake values.
-    first_identity = identities[0]
-    consistent = True
-    for idx, ident in enumerate(identities[1:], start=2):
-        if (ident.get("new_name") != first_identity.get("new_name") or
-            ident.get("new_mrn") != first_identity.get("new_mrn") or
-            ident.get("new_dob") != first_identity.get("new_dob") or
-            ident.get("new_ssn") != first_identity.get("new_ssn")):
-            print(f"Inconsistency found in message {idx}:")
-            print("First identity:", first_identity)
-            print("Current identity:", ident)
-            consistent = False
-            break
+    # Randomly sample keys (or all if fewer than random_sample_count)
+    sample_keys = random.sample(list(multi_occurrence_keys.keys()), 
+                                min(random_sample_count, len(multi_occurrence_keys)))
+    
+    all_passed = True
+    for key in sample_keys:
+        deid_list = multi_occurrence_keys[key]
+        # Compare by converting each dict to a sorted JSON string.
+        first_str = json.dumps(deid_list[0], sort_keys=True)
+        consistent = all(json.dumps(item, sort_keys=True) == first_str for item in deid_list[1:])
+        if consistent:
+            print(f"Unique key {key} is consistent across {len(deid_list)} messages.")
+        else:
+            print(f"Inconsistency found for unique key {key}:")
+            for idx, item in enumerate(deid_list, start=1):
+                print(f"Message {idx}: {json.dumps(item, indent=2, sort_keys=True)}")
+            all_passed = False
 
-    if consistent:
-        print("Test passed: De-identified data is consistent across all messages.")
+    if all_passed:
+        print("Test passed: All sampled unique keys show consistent de-identified data.")
     else:
-        print("Test failed: De-identified data is not consistent.")
-
-    # Clean up temporary files
-    os.remove(temp_filename)
-    os.remove(output_filename)
+        print("Test failed: Inconsistencies were found.")
 
 if __name__ == "__main__":
-    test_consistent_identity()
+    # Adjust the output file name if needed.
+    test_consistency(random_sample_count=5, output_file="messages_with_deid.txt")
