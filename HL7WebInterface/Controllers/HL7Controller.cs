@@ -12,7 +12,7 @@ public class HL7Controller : Controller
     private readonly HL7Service _hl7Service;
     private readonly IWebHostEnvironment _webHostEnvironment;
     private static List<HL7Message> _messages = new List<HL7Message>();
-    private const int PageSize = 1000;
+    private const int PageSize = 100;
 
     public HL7Controller(HL7Service hl7Service, IWebHostEnvironment webHostEnvironment)
     {

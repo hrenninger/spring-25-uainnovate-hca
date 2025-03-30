@@ -16,7 +16,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HL7WebInterface")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a63d5643e00a183255f9629112c58c9650a2c5fb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5dbaa1bb3e07a498ce5f72997e2fd6cf07684a6a")]
 [assembly: System.Reflection.AssemblyProductAttribute("HL7WebInterface")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HL7WebInterface")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
