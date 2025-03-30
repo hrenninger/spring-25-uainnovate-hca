@@ -1,0 +1,35 @@
+﻿@model List<HL7WebInterface.Models.HL7Message>
+
+<h2>HL7 Messages for MRN: @ViewBag.MRN | Facility: @ViewBag.Facility</h2>
+<a href="@Url.Action("Index", "HL7")" class="btn btn-secondary mb-3">Back to List</a>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Timestamp</th>
+            <th>Message Type</th>
+            <th>Control ID</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var message in Model)
+        {
+            <tr>
+                <td>@message.Id</td>
+                <td>@message.DateTime.ToString("yyyy-MM-dd HH:mm")</td>
+                <td>@message.MSH9</td>
+                <td>@message.MSH10</td>
+                <td>
+                    <button class="btn btn-warning btn-sm" data-toggle="collapse" data-target="#rawMessage-@message.Id">View Raw</button>
+                </td>
+            </tr>
+            <tr class="collapse" id="rawMessage-@message.Id">
+                <td colspan="5">
+                    <pre>@message.RawMessage</pre>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -22,6 +22,14 @@ build_property._RazorSourceGeneratorDebug =
 build_metadata.AdditionalFiles.TargetPath = QXJlYXNcSWRlbnRpdHlcUGFnZXNcX1ZpZXdTdGFydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/hrenn/source/repos/spring-25-uainnovate-hca/HL7WebInterface/Views/HL7/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSEw3XERldGFpbHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/hrenn/source/repos/spring-25-uainnovate-hca/HL7WebInterface/Views/HL7/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSEw3XEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/hrenn/source/repos/spring-25-uainnovate-hca/HL7WebInterface/Views/Home/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
