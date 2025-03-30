@@ -4,10 +4,13 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 public class HL7Service
 {
     private static int messageIdCounter = 1;
+    private static Dictionary<int, string> redactedMessages = new Dictionary<int, string>();
+
     public static List<HL7Message> ParseHL7File(string filePath)
     {
         List<HL7Message> messages = new List<HL7Message>();
@@ -104,6 +107,55 @@ public class HL7Service
         }
 
         return messages;
+    }
+
+    public static void LoadRedactedMessages(string filePath)
+    {
+        if (!File.Exists(filePath)) return;
+
+        string[] lines = File.ReadAllLines(filePath);
+        int currentId = 0;
+        StringBuilder messageBuilder = new StringBuilder();
+
+        foreach (string line in lines)
+        {
+            string[] fields = line.Split('|');
+
+            if (fields.Length == 0) continue; // Ignore empty lines
+
+            string segmentType = fields[0];
+
+            if (segmentType == "MSH")  // New HL7 message starts here
+            {
+                // Save the previous message if there was one
+                if (messageBuilder.Length > 0 && currentId > 0)
+                {
+                    redactedMessages[currentId] = messageBuilder.ToString();
+                    messageBuilder.Clear();
+                }
+
+                // Start a new message
+                currentId++;
+            }
+
+            // Append the current line to the message
+            messageBuilder.AppendLine(line);
+        }
+
+        // Save the last message
+        if (messageBuilder.Length > 0 && currentId > 0)
+        {
+            redactedMessages[currentId] = messageBuilder.ToString();
+        }
+    }
+
+    public static string GetRedactedMessage(int id)
+    {
+        if (redactedMessages.TryGetValue(id, out string message))
+        {
+            return message;
+        }
+        return "Redacted message not found";
     }
 
     private static DateTime ParseHL7DateTime(string hl7DateTime)

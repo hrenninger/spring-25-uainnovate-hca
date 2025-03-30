@@ -1,91 +1,208 @@
 ﻿@model List<HL7WebInterface.Models.HL7Message>
-
 <h2>HL7 Messages</h2>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<a href="@Url.Action("LoadHL7File", "HL7")" class="btn btn-primary">Load HL7 File</a>
-
-<!-- Change your table structure to this -->
-<table id="indexTable" class="table table-striped table-bordered mt-3">
+<table id="indexTable" class="table table-striped table-bordered mt-3 w-100">
     <thead>
         <tr>
             <th>ID</th>
             <th>Timestamp</th>
             <th>MRN</th>
-            <th>Facility</th>
-            <th>Account Number</th>
             <th>Last Name</th>
             <th>First Name</th>
+            <th>Account Number</th>
+            <th>Facility</th>
             <th>Message Type</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
+
         @foreach (var message in Model)
+
         {
-            <tr data-message-id="@message.Id">
+            <tr>
                 <td>@message.Id</td>
                 <td>@message.DateTime.ToString("yyyy-MM-dd HH:mm")</td>
                 <td>
-                    <a href="@Url.Action("Details", "HL7", new { mrn = message.MRN, facility = message.Facility })">
+                    <a href="#" class="mrn-link" data-mrn="@message.MRN" data-facility="@message.Facility">
                         @message.MRN
                     </a>
                 </td>
-                <td>@message.Facility</td>
-                <td>@message.AccountNumber</td>
                 <td>@message.LastName</td>
                 <td>@message.FirstName</td>
+                <td>@message.AccountNumber</td>
+                <td>@message.Facility</td>
                 <td>@message.MSH9</td>
                 <td>
-                    <button class="btn btn-info btn-sm toggle-raw" data-message-id="@message.Id">Raw</button>
+                    <button class="btn btn-info btn-sm toggle-message" data-id="@message.Id">View Details</button>
                 </td>
             </tr>
+
         }
     </tbody>
 </table>
 
-<!-- Add this section after the table for the raw messages -->
-@foreach (var message in Model)
-{
-    <div id="rawMessage-@message.Id" class="raw-message-container collapse">
-        <div class="card mt-1 mb-3">
-            <div class="card-body">
-                <pre>@message.RawMessage</pre>
-            </div>
+<!-- Hidden templates for raw messages -->
+<div id="raw-message-templates" style="display: none;">
+    @foreach (var message in Model)
+    {
+        <div id="template-@message.Id">
+            <pre>
+                    @foreach (var segment in message.Segments)
+                    {
+        <span class="hl7-segment" data-bs-toggle="tooltip" title="Segment: @segment.SegmentType">@segment.SegmentType|</span>
+                            @foreach (var field in segment.Fields)
+
+                            {
+            <span class="hl7-field" data-bs-toggle="tooltip" title="Field: @field.FieldLabel">@field.Value|</span>
+
+                            }
+        <br />
+
+                    }
+    </pre>
         </div>
-    </div>
-}
+
+    }
+</div>
 
 <!-- Pagination Controls -->
 <div class="mt-3">
+
     @if (ViewBag.CurrentPage > 1)
+
     {
         <a href="@Url.Action("Index", new { page = ViewBag.CurrentPage - 1 })" class="btn btn-secondary">Previous</a>
+
     }
     <span> Page @ViewBag.CurrentPage of @ViewBag.TotalPages </span>
+
     @if (ViewBag.CurrentPage < ViewBag.TotalPages)
+
     {
         <a href="@Url.Action("Index", new { page = ViewBag.CurrentPage + 1 })" class="btn btn-secondary">Next</a>
+
     }
 </div>
+
+<!-- Modal Template -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailsModalLabel">Message Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 @section Scripts {
     <link rel="stylesheet" href="https://cdn.datatables.net/2.0.1/css/dataTables.dataTables.min.css" integrity="sha384-zUxWDVAcow8yNu+q4VFsyZA3qWsKKGdWPW0SVjaR12LQze4SY8Nr75US6VDhbWkf" crossorigin="anonymous">
     <script src="https://cdn.datatables.net/2.0.1/js/dataTables.min.js" integrity="sha384-O1CwIpQyArpIVIf/MmRsfivHkHhSlKgnk+wOxIMeEqObjH8MoV/Ox0ue6FlCwucf" crossorigin="anonymous"></script>
     <script>
         $(document).ready(function () {
-            // Initialize DataTable
-            let table = new DataTable('#indexTable', {
-                "columnDefs": [
-                    { "targets": [8], "orderable": false } // Disable sorting for Actions
-                ]
+            const table = new DataTable('#indexTable', {
+                "columnDefs": [{ "targets": [7], "orderable": false }]
+            });
+            // Event listener for MRN link
+            $('#indexTable tbody').on('click', '.mrn-link', function (e) {
+                e.preventDefault();
+                const mrn = $(this).data('mrn');
+                const facility = $(this).data('facility');
+
+                // Load details via AJAX
+                $.get('@Url.Action("Details", "HL7")', { mrn: mrn, facility: facility })
+                    .done(function (data) {
+                        $('#detailsModal .modal-body').html(data);
+                        $('#detailsModal').modal('show');
+                    })
+                    .fail(function () {
+                        $('#detailsModal .modal-body').html('<div class="alert alert-danger">Failed to load details.</div>');
+                        $('#detailsModal').modal('show');
+                    });
+            });
+            // Store raw message templates
+            const messageTemplates = {};
+            $('#raw-message-templates > div').each(function () {
+                const id = $(this).attr('id').replace('template-', '');
+                messageTemplates[id] = $(this).html();
             });
 
-            // Handle the Raw button click
-            $('.toggle-raw').on('click', function () {
-                const messageId = $(this).data('message-id');
-                $('#rawMessage-' + messageId).toggleClass('show');
+            // Event listener for toggle button
+            $('#indexTable tbody').on('click', '.toggle-message', function () {
+                const tr = $(this).closest('tr');
+                const row = table.row(tr);
+                const id = tr.find('td:first').text().trim();
+
+                if (row.child.isShown()) {
+                    row.child.hide();
+                    tr.removeClass('shown');
+                    $(this).text('View Details');
+                } else {
+                    // Create two-column layout
+                    const twoColLayout = $(`
+        <div class="row">
+        <div class="col-md-6">
+        <div class="card">
+        <div class="card-header bg-info text-white">
+        <h5 class="mb-0">Deidentified Message</h5>
+        </div>
+        <div class="card-body raw-content p-2 bg-light"></div>
+        </div>
+        </div>
+        <div class="col-md-6">
+        <div class="card">
+        <div class="card-header bg-warning">
+        <h5 class="mb-0">Original Message</h5>
+        </div>
+        <div class="card-body redacted-content p-2 bg-light">
+        <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+        </div>
+        </div>
+        </div>
+        </div>
+        </div>
+                                    `);
+
+                    // Show the row with the two-column layout
+                    row.child(twoColLayout).show();
+                    tr.addClass('shown');
+                    $(this).text('Hide Details');
+
+                    // Fill raw content
+                    if (messageTemplates[id]) {
+                        twoColLayout.find('.raw-content').html(messageTemplates[id]);
+                        $('[data-bs-toggle="tooltip"]').tooltip();
+                    } else {
+                        twoColLayout.find('.raw-content').html('<div class="alert alert-danger">Raw message not found.</div>');
+                    }
+
+                    // Load redacted content via AJAX - REPLACE THIS BLOCK
+                    // Load redacted content via AJAX
+                    // Load redacted content via AJAX
+                    $.get('/HL7/GetRedactedMessage', { id: id })
+                        .done(function (data) {
+                            // Data is now pre-rendered HTML that matches the raw message format
+                            twoColLayout.find('.redacted-content').html(data);
+                            twoColLayout.find('[data-bs-toggle="tooltip"]').tooltip();
+                        })
+                        .fail(function () {
+                            twoColLayout.find('.redacted-content').html('<div class="alert alert-danger">Failed to load original message.</div>');
+                        });
+
+                }
             });
         });
     </script>
-   
 }

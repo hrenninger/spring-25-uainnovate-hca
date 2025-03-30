@@ -1,7 +1,6 @@
 ﻿@model List<HL7WebInterface.Models.HL7Message>
 
 <h2>HL7 Messages for MRN: @ViewBag.MRN | Facility: @ViewBag.Facility</h2>
-<a href="@Url.Action("Index", "HL7")" class="btn btn-secondary mb-3">Back to List</a>
 
 <table class="table table-bordered">
     <thead>
@@ -10,7 +9,6 @@
             <th>Timestamp</th>
             <th>Message Type</th>
             <th>Control ID</th>
-            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -21,15 +19,43 @@
                 <td>@message.DateTime.ToString("yyyy-MM-dd HH:mm")</td>
                 <td>@message.MSH9</td>
                 <td>@message.MSH10</td>
-                <td>
-                    <button class="btn btn-warning btn-sm" data-toggle="collapse" data-target="#rawMessage-@message.Id">View Raw</button>
-                </td>
-            </tr>
-            <tr class="collapse" id="rawMessage-@message.Id">
-                <td colspan="5">
-                    <pre>@message.RawMessage</pre>
-                </td>
+
             </tr>
         }
     </tbody>
 </table>
+
+<!-- Modal Structure -->
+<div class="modal fade" id="hl7Modal" tabindex="-1" role="dialog" aria-labelledby="hl7ModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="hl7ModalLabel">HL7 Raw Message</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <pre id="modalRawMessage"></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript to Populate Modal -->
+<script>
+    $(document).ready(function () {
+        $('#hl7Modal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var rawMessage = button.data('raw');
+            var modal = $(this);
+            modal.find('#modalRawMessage').text(rawMessage);
+        });
+    });
+</script>
+
+
+

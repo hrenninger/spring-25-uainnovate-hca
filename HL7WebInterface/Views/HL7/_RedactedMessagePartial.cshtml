@@ -1,0 +1,11 @@
+﻿<pre>
+    @foreach (var segment in Model.Segments)
+    {
+    <span class="hl7-segment" data-bs-toggle="tooltip" title="Segment: @segment.SegmentType">@segment.SegmentType|</span>
+        @foreach (var field in segment.Fields)
+        {
+        <span class="hl7-field" data-bs-toggle="tooltip" title="Field: @field.FieldLabel">@field.Value|</span>
+        }
+    <br />
+    }
+</pre>

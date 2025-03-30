@@ -45,7 +45,7 @@ namespace HL7WebInterface
 
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}");
+                pattern: "{controller=HL7}/{action=Index}/{id?}");
             app.MapRazorPages();
 
             app.Run();
