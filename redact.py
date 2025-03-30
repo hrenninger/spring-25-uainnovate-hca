@@ -82,33 +82,47 @@ def redact_obx_line(line, sensitive_tokens):
 
 def main():
     # Load the sensitive tokens from the de-identified file.
-    sensitive_tokens = load_sensitive_tokens("deid.txt")
+    sensitive_tokens = load_sensitive_tokens("messages_with_deid.txt")
     # Sort tokens by length descending (optional, to avoid substring conflicts)
     sensitive_tokens = sorted(sensitive_tokens, key=len, reverse=True)
 
     # Define the list of PID field indices to redact.
-    # Note: HL7 field numbering is 1-based after the segment name (which is at index 0).
-    # The fields to redact: PID-3, PID-4, PID-5, PID-7, PID-9, PID-11, PID-12, PID-13, PID-14, PID-18, PID-19.
     sensitive_pid_indices = [3, 4, 5, 7, 9, 11, 12, 13, 14, 18, 19]
 
-    redacted_lines = []
+    # Open the output file for writing.
+    with open("obx_messages_redacted.txt", "w") as outfile:
+        current_message_lines = []  # List to hold lines for the current message
 
-    # Process the source HL7 messages.
-    # Assumes each line in the file is a segment; messages may span multiple segments.
-    with open("sample.hl7", "r") as infile:
-        for line in infile:
-            if line.startswith("PID"):
-                redacted_lines.append(redact_pid_line(line, sensitive_pid_indices))
-            elif line.startswith("OBX"):
-                redacted_lines.append(redact_obx_line(line, sensitive_tokens))
-            else:
-                # Other segments are written unchanged.
-                redacted_lines.append(line.rstrip("\n"))
+        # Process the source HL7 messages.
+        with open("source_hl7_messages_v2.hl7", "r") as infile:
+            for line in infile:
+                # Remove any trailing newline characters.
+                line = line.rstrip("\n")
 
-    # Write the redacted messages to the output file.
-    with open("messages_redacted.txt", "w") as outfile:
-        for redacted_line in redacted_lines:
-            outfile.write(redacted_line + "\n")
+                # Check if this line indicates the start of a new message.
+                if line.startswith("MSH"):
+                    # If we already have a message collected, write it out.
+                    if current_message_lines:
+                        for redacted_line in current_message_lines:
+                            outfile.write(redacted_line + "\n")
+                        # Optionally, flush to ensure the data is written immediately.
+                        outfile.flush()
+                        # Reset the current message.
+                        current_message_lines = []
+
+                # Process the line based on its segment type.
+                # if line.startswith("PID"):
+                #     current_message_lines.append(redact_pid_line(line, sensitive_pid_indices))
+                if line.startswith("OBX"):
+                    current_message_lines.append(redact_obx_line(line, sensitive_tokens))
+                else:
+                    current_message_lines.append(line)
+
+            # After processing all lines, write out any remaining message.
+            if current_message_lines:
+                for redacted_line in current_message_lines:
+                    outfile.write(redacted_line + "\n")
+                outfile.flush()
 
 if __name__ == "__main__":
     main()
